@@ -3,13 +3,19 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000; // Render will set the PORT environment variable
+const HOST = '0.0.0.0'; // Required for Render
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/voice_over_db';
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Serve the static files from the Vite build directory
+const buildPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(buildPath));
 
 // Mongoose schema and model
 const voiceProjectSchema = new mongoose.Schema({
@@ -89,6 +95,11 @@ app.delete('/api/projects/:id', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server: Listening on port ${PORT}`);
+// For any request that doesn't match an API route, send back the React app's index.html file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server: Listening on http://${HOST}:${PORT}`);
 });
